@@ -48,4 +48,8 @@ public class BookService {
   public List<Reservation> getReservationsForBook(Long bookId) {
     return reservationDao.findByBookId(bookId);
   }
+
+  public List<Book> getAll() {
+    return bookDao.findAll();
+  }
 }

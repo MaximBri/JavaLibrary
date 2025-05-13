@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<DialogPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.library.controller.BookController">
+    <content>
+        <VBox spacing="10" alignment="CENTER">
+            <TextField fx:id="titleField" promptText="Title"/>
+            <TextField fx:id="authorField" promptText="Author"/>
+            <TextField fx:id="isbnField" promptText="ISBN"/>
+        </VBox>
+    </content>
+    <buttonTypes>
+        <ButtonType text="Save" buttonData="OK_DONE"/>
+        <ButtonType text="Cancel" buttonData="CANCEL_CLOSE"/>
+    </buttonTypes>
+</DialogPane>

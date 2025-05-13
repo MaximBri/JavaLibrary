@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.library.controller.MainController">
+    <top>
+        <ToolBar>
+            <Button fx:id="addBookBtn" text="Add Book" />
+            <Button fx:id="reserveBtn" text="Reserve" />
+        </ToolBar>
+    </top>
+    <center>
+        <TableView fx:id="bookTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn text="ID" fx:id="colId" />
+                <TableColumn text="Title" fx:id="colTitle" />
+                <TableColumn text="Author" fx:id="colAuthor" />
+                <TableColumn text="ISBN" fx:id="colIsbn" />
+                <TableColumn text="Status" fx:id="colStatus" />
+            </columns>
+        </TableView>
+    </center>
+</BorderPane>
