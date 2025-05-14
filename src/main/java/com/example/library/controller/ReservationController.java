@@ -36,9 +36,9 @@ public class ReservationController {
         .orElse(null);
 
     if (book != null) {
-      bookLabel.setText("Reserving: " + book.getTitle());
+      bookLabel.setText("Бронируемая книга: " + book.getTitle() + ", автор - " + book.getAuthor());
     } else {
-      bookLabel.setText("Unknown book");
+      bookLabel.setText("Неизвестная книга");
     }
   }
 

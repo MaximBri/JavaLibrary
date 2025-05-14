@@ -12,7 +12,7 @@ public class App extends Application {
     Parent root = FXMLLoader.load(getClass().getResource("/fxml/main.fxml"));
     Scene scene = new Scene(root);
     scene.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-    primaryStage.setTitle("Library Management");
+    primaryStage.setTitle("Панель управления библиотекой");
     primaryStage.setScene(scene);
     primaryStage.show();
   }

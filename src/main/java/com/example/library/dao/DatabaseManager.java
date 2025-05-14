@@ -13,7 +13,7 @@ public class DatabaseManager {
         try {
             Class.forName("org.h2.Driver");
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to load H2 JDBC driver", e);
+            throw new RuntimeException("Не удалось подключиться к БД", e);
         }
     }
 

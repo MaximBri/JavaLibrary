@@ -2,16 +2,17 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<DialogPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.library.controller.BookController">
+<DialogPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.library.controller.BookController" fx:id="dialogPane">
     <buttonTypes>
-        <ButtonType fx:id="okButton" text="OK" buttonData="OK_DONE"/>
-        <ButtonType fx:id="cancelButton" text="Cancel" buttonData="CANCEL_CLOSE"/>
+        <ButtonType text="Ок" buttonData="OK_DONE"/>
+        <ButtonType text="Закрыть" buttonData="CANCEL_CLOSE"/>
     </buttonTypes>
     <content>
         <VBox spacing="10" alignment="CENTER">
-            <TextField fx:id="titleField" promptText="Title"/>
-            <TextField fx:id="authorField" promptText="Author"/>
+            <TextField fx:id="titleField" promptText="Заголовок"/>
+            <TextField fx:id="authorField" promptText="Автор"/>
             <TextField fx:id="isbnField" promptText="ISBN"/>
         </VBox>
     </content>
 </DialogPane>
+

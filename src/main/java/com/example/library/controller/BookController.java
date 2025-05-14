@@ -2,7 +2,7 @@ package com.example.library.controller;
 
 import com.example.library.service.BookService;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.TextField;
@@ -20,22 +20,17 @@ public class BookController {
 
   @FXML
   public void initialize() {
-    dialogPane.lookupButton(ButtonType.OK).addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
-      String title = titleField.getText().trim();
-      String author = authorField.getText().trim();
-      String isbn = isbnField.getText().trim();
-
-      if (title.isEmpty() || author.isEmpty() || isbn.isEmpty()) {
-        // Показать alert
-        Alert alert = new Alert(Alert.AlertType.WARNING, "All fields are required.");
-        alert.showAndWait();
-        event.consume(); // отменить закрытие диалога
-        return;
-      }
-
-      bookService.addBook(title, author, isbn);
-      // диалог сам закроется, если не вызван event.consume()
-    });
+    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+    if (okButton != null) {
+      okButton.setOnAction(event -> {
+        String title = titleField.getText();
+        String author = authorField.getText();
+        String isbn = isbnField.getText();
+        System.out.println("Добавляем книгу: " + title + " - " + author + " - " + isbn);
+      });
+    } else {
+      System.err.println("Кнопка OK не найдена.");
+    }
   }
 
   // Сервис для работы с книгами

@@ -1,5 +1,7 @@
 package com.example.library.controller;
 
+import java.io.IOException;
+
 import com.example.library.model.Book;
 import com.example.library.service.BookService;
 
@@ -40,7 +42,7 @@ public class MainController {
     colAuthor.setCellValueFactory(new PropertyValueFactory<>("author"));
     colIsbn.setCellValueFactory(new PropertyValueFactory<>("isbn"));
     colStatus.setCellValueFactory(
-        cell -> new ReadOnlyStringWrapper(cell.getValue().isReserved() ? "Reserved" : "Available"));
+        cell -> new ReadOnlyStringWrapper(cell.getValue().isReserved() ? "Забронирована" : "В наличии"));
 
     // Загружаем данные
     refreshTable();
@@ -56,18 +58,23 @@ public class MainController {
 
   private void openBookDialog() {
     try {
-      FXMLLoader loader = new FXMLLoader(
-          getClass().getResource("/fxml/book_dialog.fxml"));
-      Parent root = loader.load();
+      FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/book_dialog.fxml"));
+      DialogPane dialogPane = loader.load();
 
-      Dialog<Void> dialog = new Dialog<>();
-      dialog.initStyle(StageStyle.UTILITY);
-      dialog.setTitle("Add New Book");
-      dialog.getDialogPane().setContent(root);
-      dialog.getDialogPane().getButtonTypes().addAll(
-          ButtonType.OK, ButtonType.CANCEL);
+      Dialog<ButtonType> dialog = new Dialog<>();
+      dialog.setDialogPane(dialogPane);
+      dialog.setTitle("Добавить книгу");
 
-      // По нажатию OK внутри контроллера вызывается save()
+      BookController controller = loader.getController();
+
+      dialog.setResultConverter(dialogButton -> {
+        if (dialogButton != null
+            && dialogButton.getButtonData() == ButtonBar.ButtonData.OK_DONE) {
+          controller.save();
+        }
+        return null;
+      });
+
       dialog.showAndWait();
       refreshTable();
     } catch (Exception ex) {
@@ -75,46 +82,18 @@ public class MainController {
     }
   }
 
-  // private void openReservationDialog() {
-  // Book selected = bookTable.getSelectionModel().getSelectedItem();
-  // if (selected == null) {
-  // Alert alert = new Alert(Alert.AlertType.WARNING,
-  // "Please select a book to reserve.", ButtonType.OK);
-  // alert.showAndWait();
-  // return;
-  // }
-
-  // try {
-  // FXMLLoader loader = new FXMLLoader(
-  // getClass().getResource("/fxml/reservation_dialog.fxml"));
-  // Parent root = loader.load();
-
-  // // Передаем ID книги в контроллер бронирования
-  // ReservationController ctrl = loader.getController();
-  // ctrl.setBookId(selected.getId());
-
-  // Dialog<Void> dialog = new Dialog<>();
-  // dialog.initStyle(StageStyle.UTILITY);
-  // dialog.setTitle("Reserve Book");
-  // dialog.getDialogPane().setContent(root);
-
-  // dialog.showAndWait();
-  // refreshTable();
-  // } catch (Exception ex) {
-  // ex.printStackTrace();
-  // }
-  // }
   private void openReservationDialog() {
     Book selected = bookTable.getSelectionModel().getSelectedItem();
     if (selected == null) {
-      Alert alert = new Alert(Alert.AlertType.WARNING,
-          "Please select a book to reserve.", ButtonType.OK);
-      alert.showAndWait();
+      new Alert(Alert.AlertType.WARNING,
+          "Сначала выберите, какую книгу хотите забронировать.",
+          ButtonType.OK).showAndWait();
       return;
     }
 
     try {
-      FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/reservation_dialog.fxml"));
+      FXMLLoader loader = new FXMLLoader(
+          getClass().getResource("/fxml/reservation_dialog.fxml"));
       DialogPane pane = loader.load();
 
       ReservationController controller = loader.getController();
@@ -122,12 +101,22 @@ public class MainController {
 
       Dialog<ButtonType> dialog = new Dialog<>();
       dialog.setDialogPane(pane);
-      dialog.setTitle("Reserve Book");
+      dialog.setTitle("Забронировать книгу");
 
-      dialog.showAndWait(); 
+      // <— This is the crucial part:
+      dialog.setResultConverter(bt -> {
+        if (bt != null
+            && bt.getButtonData() == ButtonBar.ButtonData.OK_DONE) {
+          controller.reserve();
+        }
+        return null;
+      });
+
+      dialog.showAndWait();
       refreshTable();
-    } catch (Exception ex) {
+    } catch (IOException ex) {
       ex.printStackTrace();
     }
   }
+
 }
