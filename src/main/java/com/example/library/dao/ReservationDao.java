@@ -2,10 +2,11 @@ package com.example.library.dao;
 
 import com.example.library.model.Reservation;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Date;
+import java.util.*;
 
-public class ReservationDao {
+public class ReservationDao extends BaseDao<Reservation> {
+  @Override
   public void createTable() {
     String sql = "CREATE TABLE IF NOT EXISTS reservations (" +
         "id IDENTITY PRIMARY KEY, " +
@@ -13,44 +14,46 @@ public class ReservationDao {
         "customer_name VARCHAR(255), " +
         "due_date DATE, " +
         "FOREIGN KEY (book_id) REFERENCES books(id)" +
-        ");";
-    try (Connection conn = DatabaseManager.getConnection();
+        ")";
+    try (Connection conn = conn();
         Statement stmt = conn.createStatement()) {
       stmt.execute(sql);
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
-  public void add(Reservation reservation) {
+  @Override
+  public void add(Reservation r) {
     String sql = "INSERT INTO reservations (book_id, customer_name, due_date) VALUES (?, ?, ?)";
-    try (Connection conn = DatabaseManager.getConnection();
+    try (Connection conn = conn();
         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-      ps.setLong(1, reservation.getBookId());
-      ps.setString(2, reservation.getCustomerName());
-      ps.setDate(3, Date.valueOf(reservation.getDueDate()));
+      ps.setLong(1, r.getBookId());
+      ps.setString(2, r.getCustomerName());
+      ps.setDate(3, Date.valueOf(r.getDueDate()));
       ps.executeUpdate();
       ResultSet rs = ps.getGeneratedKeys();
       if (rs.next())
-        reservation.setId(rs.getLong(1));
+        r.setId(rs.getLong(1));
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public List<Reservation> findAll() {
+    return findByBookId(null);
   }
 
   public List<Reservation> findByBookId(Long bookId) {
     List<Reservation> list = new ArrayList<>();
-    String sql;
-    if (bookId != null) {
-      sql = "SELECT * FROM reservations WHERE book_id = ?";
-    } else {
-      sql = "SELECT * FROM reservations";
-    }
-    try (Connection conn = DatabaseManager.getConnection();
+    String sql = bookId == null
+        ? "SELECT * FROM reservations"
+        : "SELECT * FROM reservations WHERE book_id=?";
+    try (Connection conn = conn();
         PreparedStatement ps = conn.prepareStatement(sql)) {
-      if (bookId != null) {
+      if (bookId != null)
         ps.setLong(1, bookId);
-      }
       ResultSet rs = ps.executeQuery();
       while (rs.next()) {
         Reservation r = new Reservation();
@@ -61,19 +64,33 @@ public class ReservationDao {
         list.add(r);
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
     return list;
   }
 
-  public void delete(Long reservationId) {
-    String sql = "DELETE FROM reservations WHERE id = ?";
-    try (Connection conn = DatabaseManager.getConnection();
+  @Override
+  public void update(Reservation r) {
+    String sql = "UPDATE reservations SET book_id = ?, customer_name = ?, due_date = ? WHERE id = ?";
+    try (Connection conn = conn();
         PreparedStatement ps = conn.prepareStatement(sql)) {
-      ps.setLong(1, reservationId);
+      ps.setLong(1, r.getBookId());
+      ps.setString(2, r.getCustomerName());
+      ps.setDate(3, Date.valueOf(r.getDueDate()));
+      ps.setLong(4, r.getId());
       ps.executeUpdate();
     } catch (SQLException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  protected String deleteSql() {
+    return "DELETE FROM reservations WHERE id=?";
+  }
+
+  @Override
+  public void delete(Long id) {
+    super.delete(id);
   }
 }

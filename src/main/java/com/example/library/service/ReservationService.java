@@ -8,14 +8,61 @@ import com.example.library.model.Reservation;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ReservationService {
   private final BookDao bookDao;
   private final ReservationDao reservationDao;
 
+  public List<Reservation> listAll() {
+    return reservationDao.findByBookId(null);
+  }
+
   public ReservationService() {
     this.bookDao = new BookDao();
     this.reservationDao = new ReservationDao();
+  }
+
+  /**
+   * Отменяет бронь: снимает флаг reserved у книги и удаляет запись о брони.
+   * 
+   * @param reservationId ID брони
+   * @return true, если бронь была и удалена; false иначе
+   */
+  public boolean cancel(Long reservationId) {
+    Optional<Reservation> opt = listAll().stream()
+        .filter(r -> r.getId().equals(reservationId))
+        .findFirst();
+    if (opt.isEmpty())
+      return false;
+
+    Reservation r = opt.get();
+
+    // 2) освободить книгу
+    bookDao.findAll().stream()
+        .filter(b -> b.getId().equals(r.getBookId()))
+        .findFirst()
+        .ifPresent(b -> {
+          b.setReserved(false);
+          bookDao.update(b);
+        });
+
+    reservationDao.delete(reservationId);
+    return true;
+  }
+
+  public void cancelExpiredReservations() {
+    List<Reservation> expired = listAll().stream()
+        .filter(r -> r.getDueDate().isBefore(LocalDate.now()))
+        .collect(Collectors.toList());
+
+    for (Reservation r : expired) {
+      cancel(r.getId());
+    }
+
+    if (!expired.isEmpty()) {
+      System.out.println("Удалено просроченных броней: " + expired.size());
+    }
   }
 
   /**

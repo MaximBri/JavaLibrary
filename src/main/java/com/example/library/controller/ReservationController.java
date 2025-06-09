@@ -3,6 +3,7 @@ package com.example.library.controller;
 import com.example.library.model.Book;
 import com.example.library.service.BookService;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.DialogPane;
@@ -52,7 +53,10 @@ public class ReservationController {
 
     boolean ok = bookService.reserveBook(bookId, customer, dueDate);
     if (!ok) {
-      // показать ошибку, если не удалось забронировать
+      Alert err = new Alert(Alert.AlertType.ERROR,
+          "Эта книга уже забронирована или не найдена.", ButtonType.OK);
+      err.showAndWait();
+      return;
     }
 
     // Закрытие диалога

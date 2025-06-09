@@ -5,8 +5,11 @@
             fx:controller="com.example.library.controller.MainController">
     <top>
         <ToolBar>
-            <Button fx:id="addBookBtn" text="Добавить книгу" />
-            <Button fx:id="reserveBtn" text="Забронировать книгу" />
+            <Button fx:id="addBookBtn" text="Добавить книгу" styleClass="toolbar-button"/>
+            <Button fx:id="reserveBtn" text="Забронировать книгу" styleClass="toolbar-button"/>
+            <Button fx:id="deleteBtn" text="Удалить книгу" styleClass="toolbar-button"/>
+            <Region fx:id="spacer" HBox.hgrow="ALWAYS"/>
+            <Label fx:id="countLabel" text="Всего книг: 0"/>
         </ToolBar>
     </top>
     <center>
@@ -17,6 +20,7 @@
                 <TableColumn text="Автор" fx:id="colAuthor" />
                 <TableColumn text="ISBN" fx:id="colIsbn" />
                 <TableColumn text="Статус" fx:id="colStatus" />
+                <TableColumn text="Действия" fx:id="colAction" />
             </columns>
         </TableView>
     </center>

@@ -6,7 +6,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BookDao {
+public class BookDao extends BaseDao<Book> {
+  @Override
   public void createTable() {
     String sql = "CREATE TABLE IF NOT EXISTS books (" +
         "id IDENTITY PRIMARY KEY, " +
@@ -23,6 +24,7 @@ public class BookDao {
     }
   }
 
+  @Override
   public void add(Book book) {
     String sql = "INSERT INTO books (title, author, isbn, reserved) VALUES (?, ?, ?, ?)";
     try (Connection conn = DatabaseManager.getConnection();
@@ -41,6 +43,7 @@ public class BookDao {
     }
   }
 
+  @Override
   public List<Book> findAll() {
     List<Book> list = new ArrayList<>();
     String sql = "SELECT * FROM books";
@@ -62,6 +65,7 @@ public class BookDao {
     return list;
   }
 
+  @Override
   public void update(Book book) {
     String sql = "UPDATE books SET title=?, author=?, isbn=?, reserved=? WHERE id=?";
     try (Connection conn = DatabaseManager.getConnection();
@@ -75,5 +79,10 @@ public class BookDao {
     } catch (SQLException e) {
       e.printStackTrace();
     }
+  }
+
+  @Override
+  protected String deleteSql() {
+    return "DELETE FROM books WHERE id = ?";
   }
 }

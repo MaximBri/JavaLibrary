@@ -33,26 +33,20 @@ public class BookController {
     }
   }
 
-  // Сервис для работы с книгами
   private final BookService bookService = new BookService();
 
-  /**
-   * Вызывается MainController через .save()
-   * Здесь мы читаем поля, добавляем книгу и закрываем диалог.
-   */
   public void save() {
     String title = titleField.getText().trim();
     String author = authorField.getText().trim();
     String isbn = isbnField.getText().trim();
 
     if (title.isEmpty() || author.isEmpty() || isbn.isEmpty()) {
-      // Можно выбросить исключение или показать предупреждение
       return;
     }
 
     bookService.addBook(title, author, isbn);
 
-    // Закрываем диалог: получаем DialogPane из одного из компонентов
+    // закрываем диалог
     DialogPane pane = (DialogPane) titleField.getScene().getRoot();
     pane.getButtonTypes().stream()
         .filter(bt -> bt.getButtonData() == ButtonType.OK.getButtonData())
