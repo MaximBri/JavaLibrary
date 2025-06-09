@@ -1,13 +1,10 @@
 package com.example.library.controller;
 
-import java.time.LocalDate;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import com.example.library.dao.BookDao;
-import com.example.library.dao.ReservationDao;
 import com.example.library.model.Book;
 import com.example.library.model.Reservation;
 import com.example.library.service.BookService;
@@ -35,147 +32,151 @@ public class MainController {
   private TableColumn<Book, String> colStatus;
   @FXML
   private TableColumn<Book, Void> colAction;
+
   @FXML
-  private Button addBookBtn, reserveBtn, deleteBtn;
+  private Button addBookBtn;
+  @FXML
+  private Button reserveBtn;
+  @FXML
+  private Button deleteBtn;
   @FXML
   private Label countLabel;
 
-  private final BookService bookService = new BookService(new BookDao(), new ReservationDao());
-  private final ReservationService reservationService = new ReservationService();
-  private static MainController instance;
+  private final BookService bookService;
+  private final ReservationService reservationService;
 
   public MainController() {
-    instance = this;
-  }
-
-  public static MainController getInstance() {
-    return instance;
+    this.bookService = new BookService();
+    this.reservationService = new ReservationService();
   }
 
   @FXML
   public void initialize() {
-    // 1) Настраиваем колонки модели Book
+    bindColumnWidths();
+    setupColumns();
+    setupRowHighlighting();
+    setupActionColumn();
+    setupButtons();
+
+    reservationService.cancelExpiredReservations(); // снятие просроченных броней при старте
+    loadBooks();
+  }
+
+  /**
+   * Привязка пропорциональной ширины столбцов к ширине таблицы.
+   */
+  private void bindColumnWidths() {
+    DoubleBinding totalWidth = bookTable.widthProperty().subtract(2);
+    colId.prefWidthProperty().bind(totalWidth.multiply(0.10));
+    colTitle.prefWidthProperty().bind(totalWidth.multiply(0.30));
+    colAction.prefWidthProperty().bind(totalWidth.multiply(0.10));
+    double remaining = 0.50;
+    int dynamicCols = 3;
+    double each = remaining / dynamicCols;
+    colAuthor.prefWidthProperty().bind(totalWidth.multiply(each));
+    colIsbn.prefWidthProperty().bind(totalWidth.multiply(each));
+    colStatus.prefWidthProperty().bind(totalWidth.multiply(each));
+  }
+
+  /**
+   * Настройка источников данных для колонок таблицы.
+   */
+  private void setupColumns() {
     colId.setCellValueFactory(new PropertyValueFactory<>("id"));
     colTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
     colAuthor.setCellValueFactory(new PropertyValueFactory<>("author"));
     colIsbn.setCellValueFactory(new PropertyValueFactory<>("isbn"));
+    colStatus.setCellValueFactory(cell -> {
+      Book book = cell.getValue();
+      if (!book.isReserved()) {
+        return new ReadOnlyStringWrapper("В наличии");
+      }
+      List<Reservation> reservations = reservationService.getReservationsForBook(book.getId());
+      Optional<Reservation> last = reservations.stream()
+          .max(Comparator.comparing(Reservation::getDueDate));
+      return last.map(r -> new ReadOnlyStringWrapper(
+          String.format("Забронирована: %s до %s", r.getCustomerName(), r.getDueDate())))
+          .orElseGet(() -> new ReadOnlyStringWrapper("Забронирована"));
+    });
+  }
 
-    DoubleBinding tableWidth = bookTable.widthProperty()
-        .subtract(2);
-    colId.prefWidthProperty().bind(tableWidth.multiply(0.10));
-    colTitle.prefWidthProperty().bind(tableWidth.multiply(0.30));
-    colAction.prefWidthProperty().bind(tableWidth.multiply(0.10));
-    double remaining = 0.50;
-    int otherCols = 3;
-    double each = remaining / otherCols;
-    colAuthor.prefWidthProperty().bind(tableWidth.multiply(each));
-    colIsbn.prefWidthProperty().bind(tableWidth.multiply(each));
-    colStatus.prefWidthProperty().bind(tableWidth.multiply(each));
-
-    reservationService.cancelExpiredReservations(); // удаление просроченых броней
-
+  /**
+   * Подсветка строк таблицы в зависимости от статуса брони.
+   */
+  private void setupRowHighlighting() {
     bookTable.setRowFactory(table -> new TableRow<>() {
       @Override
       protected void updateItem(Book book, boolean empty) {
         super.updateItem(book, empty);
-
         if (empty || book == null) {
           setStyle("");
         } else if (book.isReserved()) {
-          // Светло-красный фон
           setStyle("-fx-background-color: #ffdddd;");
         } else {
-          // Обычный фон
-          setStyle("-fx-background-color:rgb(93, 136, 253);");
+          setStyle("-fx-background-color:rgb(66, 94, 252);");
         }
       }
     });
+  }
 
-    // 2) Столбец «Статус» с подробной информацией о резерве
-    colStatus.setCellValueFactory(cell -> {
-      Book b = cell.getValue();
-      if (!b.isReserved()) {
-        return new ReadOnlyStringWrapper("В наличии");
-      }
-      // если зарезервирована — забираем последнюю бронь
-      List<Reservation> list = new ReservationDao().findByBookId(b.getId());
-      Reservation last = list.stream()
-          .max(Comparator.comparing(Reservation::getDueDate))
-          .orElse(null);
-      if (last != null) {
-        String txt = String.format("Забронирована: %s до %s",
-            last.getCustomerName(),
-            last.getDueDate());
-        return new ReadOnlyStringWrapper(txt);
-      } else {
-        return new ReadOnlyStringWrapper("Забронирована");
-      }
-    });
-
-    deleteBtn.setOnAction(e -> {
-      Book sel = bookTable.getSelectionModel().getSelectedItem();
-      if (sel == null) {
-        new Alert(Alert.AlertType.WARNING,
-            "Сначала выберите книгу для удаления.", ButtonType.OK).showAndWait();
-        return;
-      }
-      // Подтверждение
-      Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-          "Удалить книгу \"" + sel.getTitle() + "\"?", ButtonType.YES, ButtonType.NO);
-      Optional<ButtonType> res = confirm.showAndWait();
-      if (res.isPresent() && res.get() == ButtonType.YES) {
-        bookService.deleteBook(sel.getId());
-        refreshTable();
-      }
-    });
-
-    // 3) Колонка «Действия» с кнопкой «Вернуть»
-    // Обратите внимание: <TableColumn fx:id="colAction"/> должен быть объявлен в
-    // FXML
+  /**
+   * Настройка колонки действий (кнопка возврата).
+   */
+  private void setupActionColumn() {
     colAction.setCellFactory(col -> new TableCell<>() {
-      private final Button btn = new Button("Вернуть");
+      private final Button returnBtn = new Button("Вернуть");
 
       {
-        btn.setOnAction(e -> {
-          Book book = getTableView().getItems().get(getIndex());
-          handleReturn(book.getId());
-        });
+        returnBtn.getStyleClass().add("toolbar-button");
+        returnBtn.setOnAction(e -> handleReturn(getCurrentBook().getId()));
       }
 
       @Override
       protected void updateItem(Void item, boolean empty) {
         super.updateItem(item, empty);
-
         if (empty) {
-          // сама строка пуста — не рисуем ничего
           setGraphic(null);
         } else {
-          Book book = getTableView().getItems().get(getIndex());
-          if (book.isReserved()) {
-            // только если книга зарезервирована — показываем кнопку
-            setGraphic(btn);
-          } else {
-            // иначе — пустая ячейка
-            setGraphic(null);
-          }
+          Book book = getCurrentBook();
+          setGraphic(book != null && book.isReserved() ? returnBtn : null);
         }
       }
+
+      private Book getCurrentBook() {
+        return getTableView().getItems().get(getIndex());
+      }
     });
+  }
 
-    // 4) Загрузка данных
-    refreshTable();
-
-    // 5) Обработчики для стандартных кнопок
+  /**
+   * Привязка событий к кнопкам тулбара.
+   */
+  private void setupButtons() {
     addBookBtn.setOnAction(e -> openBookDialog());
     reserveBtn.setOnAction(e -> openReservationDialog());
+    deleteBtn.setOnAction(e -> handleDelete());
   }
 
+  /**
+   * Загрузка и отображение списка книг.
+   */
+  private void loadBooks() {
+    List<Book> books = bookService.getAllBooks();
+    bookTable.getItems().setAll(books);
+    countLabel.setText("Всего книг: " + books.size());
+  }
+
+  /**
+   * Обновляет таблицу (после операций CRUD).
+   */
   private void refreshTable() {
-    List<Book> all = bookService.getAllBooks();
-    bookTable.getItems().setAll(all);
-    countLabel.setText("Всего книг: " + all.size());
+    reservationService.cancelExpiredReservations();
+    loadBooks();
   }
 
+  /**
+   * Открывает диалог добавления новой книги.
+   */
   private void openBookDialog() {
     try {
       FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/book_dialog.fxml"));
@@ -192,23 +193,25 @@ public class MainController {
       });
       dialog.showAndWait();
       refreshTable();
-    } catch (Exception ex) {
-      ex.printStackTrace();
+    } catch (IOException ex) {
+      showError("Не удалось открыть окно добавления книги", ex);
     }
   }
 
+  /**
+   * Открывает диалог бронирования выбранной книги.
+   */
   private void openReservationDialog() {
-    Book sel = bookTable.getSelectionModel().getSelectedItem();
-    if (sel == null) {
-      new Alert(Alert.AlertType.WARNING,
-          "Сначала выберите книгу.", ButtonType.OK).showAndWait();
+    Book book = bookTable.getSelectionModel().getSelectedItem();
+    if (book == null) {
+      showWarning("Сначала выберите книгу для бронирования.");
       return;
     }
     try {
       FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/reservation_dialog.fxml"));
       DialogPane pane = loader.load();
       ReservationController ctrl = loader.getController();
-      ctrl.setBookId(sel.getId());
+      ctrl.setBookId(book.getId());
       Dialog<ButtonType> dialog = new Dialog<>();
       dialog.setDialogPane(pane);
       dialog.setTitle("Забронировать книгу");
@@ -220,50 +223,60 @@ public class MainController {
       });
       dialog.showAndWait();
       refreshTable();
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (IOException ex) {
+      showError("Не удалось открыть окно бронирования", ex);
     }
   }
 
-  public void handleReturn(Long bookId) {
-    // Найти ID брони для этой книги
-    Long resId = reservationService.listAll().stream()
-        .filter(r -> r.getBookId().equals(bookId))
-        .map(Reservation::getId)
-        .findFirst()
-        .orElse(null);
-
-    if (resId == null) {
-      new Alert(Alert.AlertType.WARNING,
-          "Книга не забронирована.", ButtonType.OK).showAndWait();
+  /**
+   * Удаляет выбранную книгу с подтверждением.
+   */
+  private void handleDelete() {
+    Book book = bookTable.getSelectionModel().getSelectedItem();
+    if (book == null) {
+      showWarning("Сначала выберите книгу для удаления.");
       return;
     }
-
-    boolean success = reservationService.cancel(resId);
-    if (success) {
-      new Alert(Alert.AlertType.INFORMATION,
-          "Бронирование отменено.", ButtonType.OK).showAndWait();
+    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+        String.format("Удалить книгу '%s'?", book.getTitle()), ButtonType.YES, ButtonType.NO);
+    Optional<ButtonType> result = confirm.showAndWait();
+    if (result.isPresent() && result.get() == ButtonType.YES) {
+      bookService.deleteBook(book.getId());
       refreshTable();
     }
   }
 
-  // public void handleReturn(Long bookId) {
-  // // найдем бронь для этой книги (берём первую или последнюю)
-  // Long reservationId = reservationService.listAll().stream()
-  // .filter(r -> r.getBookId().equals(bookId))
-  // .map(Reservation::getId)
-  // .findFirst()
-  // .orElse(null);
-  // if (reservationId == null) {
-  // new Alert(Alert.AlertType.WARNING, "Эта книга не забронирована",
-  // ButtonType.OK).showAndWait();
-  // return;
-  // }
-  // boolean ok = reservationService.cancel(reservationId);
-  // if (ok) {
-  // new Alert(Alert.AlertType.INFORMATION, "Книга возвращена",
-  // ButtonType.OK).showAndWait();
-  // refreshTable();
-  // }
-  // }
+  /**
+   * Возвращает книгу из резервации.
+   */
+  public void handleReturn(Long bookId) {
+    Long reservationId = reservationService.listAll().stream()
+        .filter(r -> r.getBookId().equals(bookId))
+        .map(Reservation::getId)
+        .findFirst()
+        .orElse(null);
+    if (reservationId == null) {
+      showWarning("Книга не забронирована.");
+      return;
+    }
+    boolean success = reservationService.cancel(reservationId);
+    if (success) {
+      showInfo("Бронирование успешно отменено.");
+      refreshTable();
+    }
+  }
+
+  /* === Вспомогательные методы для алертов === */
+  private void showError(String msg, Exception ex) {
+    ex.printStackTrace();
+    new Alert(Alert.AlertType.ERROR, msg + "\n" + ex.getMessage(), ButtonType.OK).showAndWait();
+  }
+
+  private void showWarning(String msg) {
+    new Alert(Alert.AlertType.WARNING, msg, ButtonType.OK).showAndWait();
+  }
+
+  private void showInfo(String msg) {
+    new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK).showAndWait();
+  }
 }
