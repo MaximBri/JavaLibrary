@@ -21,11 +21,8 @@ public class ReservationController {
   @FXML
   private Label bookLabel;
 
-  // Мы можем либо передать BookService в контроллер через MainController,
-  // либо завести здесь новый экземпляр
   private final BookService bookService = new BookService();
 
-  // Поле, куда MainController запишет ID книги перед открытием диалога
   private long bookId;
 
   public void setBookId(long bookId) {
@@ -59,7 +56,7 @@ public class ReservationController {
       return;
     }
 
-    // Закрытие диалога
+    // закрытие диалога
     DialogPane pane = (DialogPane) nameField.getScene().getRoot();
     pane.getButtonTypes().stream()
         .filter(bt -> bt.getButtonData() == ButtonType.OK.getButtonData())

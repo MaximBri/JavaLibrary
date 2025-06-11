@@ -23,12 +23,6 @@ public class ReservationService {
     this.reservationDao = new ReservationDao();
   }
 
-  /**
-   * Отменяет бронь: снимает флаг reserved у книги и удаляет запись о брони.
-   * 
-   * @param reservationId ID брони
-   * @return true, если бронь была и удалена; false иначе
-   */
   public boolean cancel(Long reservationId) {
     Optional<Reservation> opt = listAll().stream()
         .filter(r -> r.getId().equals(reservationId))
@@ -38,7 +32,7 @@ public class ReservationService {
 
     Reservation r = opt.get();
 
-    // 2) освободить книгу
+    // освободить книгу
     bookDao.findAll().stream()
         .filter(b -> b.getId().equals(r.getBookId()))
         .findFirst()
@@ -65,9 +59,6 @@ public class ReservationService {
     }
   }
 
-  /**
-   * Создает новое бронирование книги.
-   */
   public boolean createReservation(Long bookId, String customerName, LocalDate dueDate) {
     Optional<Book> optionalBook = bookDao.findAll().stream()
         .filter(b -> b.getId().equals(bookId) && !b.isReserved())
@@ -83,9 +74,6 @@ public class ReservationService {
     return false;
   }
 
-  /**
-   * Отменяет бронь (при возврате книги).
-   */
   public boolean cancelReservation(Long reservationId) {
     // находим бронь
     List<Reservation> all = reservationDao.findByBookId(null);
@@ -110,9 +98,6 @@ public class ReservationService {
     return false;
   }
 
-  /**
-   * Возвращает список всех бронирований или по книге.
-   */
   public List<Reservation> getAllReservations() {
     return reservationDao.findByBookId(null);
   }

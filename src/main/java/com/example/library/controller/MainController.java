@@ -62,9 +62,6 @@ public class MainController {
     loadBooks();
   }
 
-  /**
-   * Привязка пропорциональной ширины столбцов к ширине таблицы.
-   */
   private void bindColumnWidths() {
     DoubleBinding totalWidth = bookTable.widthProperty().subtract(2);
     colId.prefWidthProperty().bind(totalWidth.multiply(0.10));
@@ -78,9 +75,6 @@ public class MainController {
     colStatus.prefWidthProperty().bind(totalWidth.multiply(each));
   }
 
-  /**
-   * Настройка источников данных для колонок таблицы.
-   */
   private void setupColumns() {
     colId.setCellValueFactory(new PropertyValueFactory<>("id"));
     colTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -100,9 +94,6 @@ public class MainController {
     });
   }
 
-  /**
-   * Подсветка строк таблицы в зависимости от статуса брони.
-   */
   private void setupRowHighlighting() {
     bookTable.setRowFactory(table -> new TableRow<>() {
       @Override
@@ -119,9 +110,6 @@ public class MainController {
     });
   }
 
-  /**
-   * Настройка колонки действий (кнопка возврата).
-   */
   private void setupActionColumn() {
     colAction.setCellFactory(col -> new TableCell<>() {
       private final Button returnBtn = new Button("Вернуть");
@@ -148,35 +136,23 @@ public class MainController {
     });
   }
 
-  /**
-   * Привязка событий к кнопкам тулбара.
-   */
   private void setupButtons() {
     addBookBtn.setOnAction(e -> openBookDialog());
     reserveBtn.setOnAction(e -> openReservationDialog());
     deleteBtn.setOnAction(e -> handleDelete());
   }
 
-  /**
-   * Загрузка и отображение списка книг.
-   */
   private void loadBooks() {
     List<Book> books = bookService.getAllBooks();
     bookTable.getItems().setAll(books);
     countLabel.setText("Всего книг: " + books.size());
   }
 
-  /**
-   * Обновляет таблицу (после операций CRUD).
-   */
   private void refreshTable() {
     reservationService.cancelExpiredReservations();
     loadBooks();
   }
 
-  /**
-   * Открывает диалог добавления новой книги.
-   */
   private void openBookDialog() {
     try {
       FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/book_dialog.fxml"));
@@ -198,9 +174,6 @@ public class MainController {
     }
   }
 
-  /**
-   * Открывает диалог бронирования выбранной книги.
-   */
   private void openReservationDialog() {
     Book book = bookTable.getSelectionModel().getSelectedItem();
     if (book == null) {
@@ -228,9 +201,6 @@ public class MainController {
     }
   }
 
-  /**
-   * Удаляет выбранную книгу с подтверждением.
-   */
   private void handleDelete() {
     Book book = bookTable.getSelectionModel().getSelectedItem();
     if (book == null) {
@@ -246,9 +216,6 @@ public class MainController {
     }
   }
 
-  /**
-   * Возвращает книгу из резервации.
-   */
   public void handleReturn(Long bookId) {
     Long reservationId = reservationService.listAll().stream()
         .filter(r -> r.getBookId().equals(bookId))
@@ -266,7 +233,6 @@ public class MainController {
     }
   }
 
-  /* === Вспомогательные методы для алертов === */
   private void showError(String msg, Exception ex) {
     ex.printStackTrace();
     new Alert(Alert.AlertType.ERROR, msg + "\n" + ex.getMessage(), ButtonType.OK).showAndWait();

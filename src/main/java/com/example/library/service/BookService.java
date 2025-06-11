@@ -43,12 +43,12 @@ public class BookService implements IBookService {
         .findFirst();
 
     if (opt.isEmpty()) {
-      return false; // книги нет
+      return false;
     }
 
     Book book = opt.get();
     if (book.isReserved()) {
-      return false; // уже забронирована, больше не бронируем
+      return false;
     }
 
     if (opt.isPresent()) {
@@ -62,9 +62,7 @@ public class BookService implements IBookService {
 
   @Override
   public void deleteBook(Long bookId) {
-    // 1) Сначала удаляем все связанные резервации (опционально)
     resDao.findByBookId(bookId).forEach(r -> resDao.delete(r.getId()));
-    // 2) Удаляем саму книгу
     bookDao.delete(bookId);
   }
 }
