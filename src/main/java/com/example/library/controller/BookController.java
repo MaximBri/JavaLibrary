@@ -1,56 +1,76 @@
 package com.example.library.controller;
 
-import com.example.library.service.BookService;
+import com.example.library.model.Book;
+import com.example.library.service.PublicationService;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import java.time.LocalDate;
 
-public class BookController {
-
+public class BookController implements PublicationController {
   @FXML
   private TextField titleField;
+  @FXML
+  private TextField publisherField;
+  @FXML
+  private DatePicker publishDatePicker;
   @FXML
   private TextField authorField;
   @FXML
   private TextField isbnField;
   @FXML
-  private DialogPane dialogPane;
+  private TextField pageCountField;
+  @FXML
+  private TextField genreField;
+  private final PublicationService publicationService;
+
+  public BookController() {
+    this.publicationService = new PublicationService();
+  }
 
   @FXML
   public void initialize() {
-    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-    if (okButton != null) {
-      okButton.setOnAction(event -> {
-        String title = titleField.getText();
-        String author = authorField.getText();
-        String isbn = isbnField.getText();
-        System.out.println("Добавляем книгу: " + title + " - " + author + " - " + isbn);
-      });
-    } else {
-      System.err.println("Кнопка OK не найдена.");
+    publishDatePicker.setValue(LocalDate.now());
+  }
+
+  @Override
+  public void save() {
+    try {
+      String title = titleField.getText().trim();
+      String publisher = publisherField.getText().trim();
+      LocalDate publishDate = publishDatePicker.getValue();
+      String author = authorField.getText().trim();
+      String isbn = isbnField.getText().trim();
+      int pageCount = Integer.parseInt(pageCountField.getText().trim());
+      String genre = genreField.getText().trim();
+
+      if (title.isEmpty() || author.isEmpty() || isbn.isEmpty()) {
+        showError("Поля Название, Автор и ISBN должны быть заполнены.");
+        return;
+      }
+
+      Book book = new Book();
+      book.setTitle(title);
+      book.setPublisher(publisher);
+      book.setPublishDate(publishDate);
+      book.setAuthor(author);
+      book.setIsbn(isbn);
+      book.setPageCount(pageCount);
+      book.setGenre(genre);
+
+      publicationService.addBook(book);
+    } catch (NumberFormatException e) {
+      showError("Пожалуйста, введите корректное число страниц.");
+    } catch (Exception e) {
+      showError("Ошибка при добавлении книги: " + e.getMessage());
+      e.printStackTrace(); // Добавьте логирование для отладки
     }
   }
 
-  private final BookService bookService = new BookService();
-
-  public void save() {
-    String title = titleField.getText().trim();
-    String author = authorField.getText().trim();
-    String isbn = isbnField.getText().trim();
-
-    if (title.isEmpty() || author.isEmpty() || isbn.isEmpty()) {
-      return;
-    }
-
-    bookService.addBook(title, author, isbn);
-
-    // закрываем диалог
-    DialogPane pane = (DialogPane) titleField.getScene().getRoot();
-    pane.getButtonTypes().stream()
-        .filter(bt -> bt.getButtonData() == ButtonType.OK.getButtonData())
-        .findFirst()
-        .ifPresent(bt -> pane.lookupButton(bt).getScene().getWindow().hide());
+  private void showError(String message) {
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle("Ошибка");
+    alert.setHeaderText(null);
+    alert.setContentText(message);
+    alert.showAndWait();
   }
 }

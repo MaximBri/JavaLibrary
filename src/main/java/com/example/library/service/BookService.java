@@ -6,6 +6,7 @@ import com.example.library.dao.ReservationDao;
 import com.example.library.model.Book;
 import com.example.library.model.Reservation;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +63,18 @@ public class BookService implements IBookService {
 
   @Override
   public void deleteBook(Long bookId) {
-    resDao.findByBookId(bookId).forEach(r -> resDao.delete(r.getId()));
-    bookDao.delete(bookId);
+    resDao.findByBookId(bookId).forEach(r -> {
+      try {
+        resDao.delete(r.getId());
+      } catch (SQLException e) {
+        throw new RuntimeException("Ошибка при удалении резервирования: " + e.getMessage(), e);
+      }
+    });
+
+    try {
+      bookDao.delete(bookId);
+    } catch (SQLException e) {
+      throw new RuntimeException("Ошибка при удалении книги: " + e.getMessage(), e);
+    }
   }
 }

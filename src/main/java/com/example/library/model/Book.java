@@ -1,38 +1,48 @@
 package com.example.library.model;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
-public class Book {
-  private Long id;
-  private String title;
+public class Book extends Publication {
   private String author;
   private String isbn;
-  private boolean reserved;
+  private int pageCount;
+  private String genre;
 
   public Book() {
+    super();
   }
 
   public Book(String title, String author, String isbn) {
-    this.title = title;
+    super(title, null, null);
     this.author = author;
     this.isbn = isbn;
-    this.reserved = false;
   }
 
-  public Long getId() {
-    return id;
+  public Book(String title, String author, String isbn, String publisher, LocalDate publishDate) {
+    super(title, publisher, publishDate);
+    this.author = author;
+    this.isbn = isbn;
   }
 
-  public void setId(Long id) {
-    this.id = id;
+  public Book(String title, String author, String isbn, String publisher, LocalDate publishDate,
+      int pageCount, String genre) {
+    super(title, publisher, publishDate);
+    this.author = author;
+    this.isbn = isbn;
+    this.pageCount = pageCount;
+    this.genre = genre;
   }
 
-  public String getTitle() {
-    return title;
+  @Override
+  public String getType() {
+    return "Книга";
   }
 
-  public void setTitle(String title) {
-    this.title = title;
+  @Override
+  public String getDescription() {
+    return String.format("%s, автор: %s, ISBN: %s, страниц: %d, жанр: %s",
+        getTitle(), author, isbn, pageCount, genre);
   }
 
   public String getAuthor() {
@@ -51,12 +61,20 @@ public class Book {
     this.isbn = isbn;
   }
 
-  public boolean isReserved() {
-    return reserved;
+  public int getPageCount() {
+    return pageCount;
   }
 
-  public void setReserved(boolean reserved) {
-    this.reserved = reserved;
+  public void setPageCount(int pageCount) {
+    this.pageCount = pageCount;
+  }
+
+  public String getGenre() {
+    return genre;
+  }
+
+  public void setGenre(String genre) {
+    this.genre = genre;
   }
 
   @Override
@@ -65,18 +83,14 @@ public class Book {
       return true;
     if (o == null || getClass() != o.getClass())
       return false;
+    if (!super.equals(o))
+      return false;
     Book book = (Book) o;
-    return Objects.equals(isbn, book.isbn);
+    return Objects.equals(author, book.author) && Objects.equals(isbn, book.isbn);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(isbn);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("Book[id=%d, title='%s', author='%s', isbn='%s', reserved=%b]",
-        id, title, author, isbn, reserved);
+    return Objects.hash(super.hashCode(), author, isbn);
   }
 }

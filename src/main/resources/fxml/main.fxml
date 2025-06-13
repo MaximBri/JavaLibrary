@@ -1,27 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.library.controller.MainController">
-    <top>
-        <ToolBar>
-            <Button fx:id="addBookBtn" text="Добавить книгу" styleClass="toolbar-button"/>
-            <Button fx:id="reserveBtn" text="Забронировать книгу" styleClass="toolbar-button"/>
-            <Button fx:id="deleteBtn" text="Удалить книгу" styleClass="toolbar-button"/>
-            <Region fx:id="spacer" HBox.hgrow="ALWAYS"/>
-            <Label fx:id="countLabel" text="Всего книг: 0"/>
-        </ToolBar>
-    </top>
-    <center>
-        <TableView fx:id="bookTable" VBox.vgrow="ALWAYS">
-            <columns>
-                <TableColumn text="ID" fx:id="colId" />
-                <TableColumn text="Заголовок" fx:id="colTitle" />
-                <TableColumn text="Автор" fx:id="colAuthor" />
-                <TableColumn text="ISBN" fx:id="colIsbn" />
-                <TableColumn text="Статус" fx:id="colStatus" />
-                <TableColumn text="Действия" fx:id="colAction" />
-            </columns>
-        </TableView>
-    </center>
-</BorderPane>
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.library.controller.MainController" 
+      spacing="10" style="-fx-padding: 15;">
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Фильтр:" />
+        <ComboBox fx:id="typeFilter" prefWidth="150" />
+        <Region HBox.hgrow="ALWAYS" />
+        <TextField fx:id="searchField" promptText="Поиск по названию" prefWidth="200" />
+        <Button fx:id="searchBtn" text="Поиск" />
+    </HBox>
+    
+    <TableView fx:id="publicationTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" />
+            <TableColumn fx:id="colTitle" text="Название" />
+            <TableColumn fx:id="colType" text="Тип" />
+            <TableColumn fx:id="colDetails" text="Детали" />
+            <TableColumn fx:id="colStatus" text="Статус" />
+            <TableColumn fx:id="colAction" text="Действие" />
+        </columns>
+    </TableView>
+    
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button fx:id="addBookBtn" text="Добавить книгу" />
+        <Button fx:id="addMagazineBtn" text="Добавить журнал" />
+        <Button fx:id="addNewspaperBtn" text="Добавить газету" />
+        <Button fx:id="addEBookBtn" text="Добавить эл. книгу" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Button fx:id="reserveBtn" text="Забронировать" />
+        <Button fx:id="deleteBtn" text="Удалить" />
+    </HBox>
+    
+    <HBox alignment="CENTER_RIGHT">
+        <Label fx:id="countLabel" text="Всего публикаций: 0" />
+    </HBox>
+</VBox>

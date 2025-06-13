@@ -10,13 +10,12 @@ public abstract class BaseDao<T> implements Dao<T> {
   }
 
   @Override
-  public void delete(Long id) {
+  public void delete(Long id) throws SQLException {
     String sql = deleteSql();
-    try (PreparedStatement ps = conn().prepareStatement(sql)) {
+    try (Connection conn = conn();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setLong(1, id);
       ps.executeUpdate();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
     }
   }
 

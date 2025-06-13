@@ -1,5 +1,6 @@
 package com.example.library.dao;
 
+import java.sql.SQLException;
 import java.util.List;
 
 public interface Dao<T> {
@@ -9,7 +10,7 @@ public interface Dao<T> {
 
   void update(T entity);
 
-  void delete(Long id);
+  void delete(Long id) throws SQLException;
 
   List<T> findAll();
 }

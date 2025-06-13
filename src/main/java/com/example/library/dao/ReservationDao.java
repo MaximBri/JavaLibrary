@@ -90,7 +90,7 @@ public class ReservationDao extends BaseDao<Reservation> {
   }
 
   @Override
-  public void delete(Long id) {
+  public void delete(Long id) throws SQLException {
     super.delete(id);
   }
 }
