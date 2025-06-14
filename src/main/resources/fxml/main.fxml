@@ -13,6 +13,14 @@
         <TextField fx:id="searchField" promptText="Поиск по названию" prefWidth="200" />
         <Button fx:id="searchBtn" text="Поиск" />
     </HBox>
+
+        <HBox spacing="10" style="-fx-padding:10;">
+            <Label text="Login:" />
+            <TextField fx:id="loginField" promptText="Username" />
+            <Label text="Password:" />
+            <PasswordField fx:id="passwordField" promptText="Password" />
+            <Button text="Sign In" fx:id="loginBtn" onAction="#handleLogin" />
+        </HBox>
     
     <TableView fx:id="publicationTable" VBox.vgrow="ALWAYS">
         <columns>

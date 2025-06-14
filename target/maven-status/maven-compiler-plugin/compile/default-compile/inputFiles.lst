@@ -10,6 +10,7 @@ C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\BookDao.jav
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\MagazineDao.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\EBookDao.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\service\BookService.java
+C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\model\user\User.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\DatabaseManager.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\BasePublicationDao.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\model\Magazine.java
@@ -17,11 +18,15 @@ C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\BaseDao.jav
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\model\Publication.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\controller\BookController.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\model\EBook.java
+C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\UserDao.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\ReservationDao.java
+C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\service\AuthService.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\NewspaperDao.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\controller\EBookController.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\controller\ReservationController.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\service\IBookService.java
+C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\model\user\Librarian.java
+C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\model\user\Reader.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\service\PublicationService.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\controller\NewspaperController.java
 C:\Users\Maxim\Desktop\library\src\main\java\com\example\library\dao\PublicationDao.java

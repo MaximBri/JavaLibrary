@@ -6,6 +6,7 @@ import com.example.library.model.Reservation;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public class ReservationService {
   private final ReservationDao reservationDao;
@@ -42,5 +43,13 @@ public class ReservationService {
         }
       }
     }
+  }
+
+  public Optional<String> getReservedBy(Long bookId) {
+    List<Reservation> list = getReservationsForBook(bookId);
+    return list.stream()
+        .filter(r -> !r.getDueDate().isBefore(LocalDate.now()))
+        .findFirst()
+        .map(Reservation::getCustomerName);
   }
 }

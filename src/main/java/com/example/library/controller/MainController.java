@@ -1,6 +1,12 @@
 package com.example.library.controller;
 
+import com.example.library.dao.BookDao;
+import com.example.library.dao.EBookDao;
+import com.example.library.dao.MagazineDao;
+import com.example.library.dao.NewspaperDao;
 import com.example.library.model.*;
+import com.example.library.model.user.User;
+import com.example.library.service.AuthService;
 import com.example.library.service.PublicationService;
 import com.example.library.service.ReservationService;
 import javafx.beans.binding.DoubleBinding;
@@ -24,6 +30,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class MainController {
+  @FXML
+  private TextField loginField;
+  @FXML
+  private PasswordField passwordField;
+  @FXML
+  private Button loginBtn;
   @FXML
   private TableView<Publication> publicationTable;
   @FXML
@@ -62,6 +74,13 @@ public class MainController {
   private final PublicationService publicationService;
   private final ReservationService reservationService;
 
+  private User currentUser;
+  private AuthService authService;
+  private BookDao bookDao;
+  private MagazineDao magazineDao;
+  private NewspaperDao newspaperDao;
+  private EBookDao ebookDao;
+
   public MainController() {
     this.publicationService = new PublicationService();
     this.reservationService = new ReservationService();
@@ -69,6 +88,13 @@ public class MainController {
 
   @FXML
   public void initialize() {
+    bookDao = new BookDao();
+    authService = new AuthService();
+    magazineDao = new MagazineDao();
+    newspaperDao = new NewspaperDao();
+    ebookDao = new EBookDao();
+
+    applyPermissions();
     setupTypeFilter();
     bindColumnWidths();
     setupColumns();
@@ -78,6 +104,61 @@ public class MainController {
     setupSearch();
     publicationService.cancelExpiredReservations();
     loadPublications();
+  }
+
+  private void applyPermissions() {
+    boolean loggedIn = currentUser != null;
+
+    // canAdd = могут ли добавлять публикации?
+    boolean canAdd = loggedIn && currentUser.canAddPublication();
+    addBookBtn.setVisible(canAdd);
+    addBookBtn.setManaged(canAdd);
+    addMagazineBtn.setVisible(canAdd);
+    addMagazineBtn.setManaged(canAdd);
+    addNewspaperBtn.setVisible(canAdd);
+    addNewspaperBtn.setManaged(canAdd);
+    addEBookBtn.setVisible(canAdd);
+    addEBookBtn.setManaged(canAdd);
+
+    // canDelete = могут ли удалять?
+    boolean canDelete = loggedIn && currentUser.canDeletePublication();
+    deleteBtn.setVisible(canDelete);
+    deleteBtn.setManaged(canDelete);
+
+    // canReserve = могут ли бронировать?
+    boolean canReserve = loggedIn && currentUser.canReservePublication();
+    reserveBtn.setVisible(canReserve);
+    reserveBtn.setManaged(canReserve);
+    // boolean canAdd = currentUser != null && currentUser.canAddPublication();
+    // addBookBtn.setDisable(!canAdd);
+    // addMagazineBtn.setDisable(!canAdd);
+    // addNewspaperBtn.setDisable(!canAdd);
+    // addEBookBtn.setDisable(!canAdd);
+
+    // boolean canDelete = currentUser != null &&
+    // currentUser.canDeletePublication();
+    // deleteBtn.setDisable(!canDelete);
+
+    // boolean canReserve = currentUser != null &&
+    // currentUser.canReservePublication();
+    // reserveBtn.setDisable(!canReserve);
+  }
+
+  public void setCurrentUser(User user) {
+    this.currentUser = user;
+  }
+
+  @FXML
+  private void handleLogin() {
+    String login = loginField.getText().trim();
+    String password = passwordField.getText().trim();
+    if (login.isEmpty() || password.isEmpty()) {
+      showAlert("Введите логин и пароль.");
+      return;
+    }
+    currentUser = authService.login(login, password);
+    showAlert("Успешный вход: " + currentUser.getName() + ", роль: " + currentUser.getRole());
+    applyPermissions();
   }
 
   private void setupTypeFilter() {
@@ -251,6 +332,8 @@ public class MainController {
   }
 
   private void openAddDialog(String fxmlFile, String title) {
+    if (!currentUser.canReservePublication())
+      return;
     try {
       FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/" + fxmlFile));
       loader.setCharset(StandardCharsets.UTF_8);
@@ -283,53 +366,90 @@ public class MainController {
       showWarning("Сначала выберите публикацию для бронирования.");
       return;
     }
-
     if (publication.isReserved()) {
       showWarning("Выбранная публикация уже забронирована.");
       return;
     }
 
-    TextInputDialog customerDialog = new TextInputDialog();
-    customerDialog.setTitle("Бронирование");
-    customerDialog.setHeaderText("Введите имя клиента:");
-    customerDialog.setContentText("Имя:");
+    // Запрашиваем у пользователя только число дней
+    TextInputDialog daysDialog = new TextInputDialog("7");
+    daysDialog.setTitle("Бронирование");
+    daysDialog.setHeaderText(
+        String.format("Бронируется: «%s» для %s", publication.getTitle(), currentUser.getLogin()));
+    daysDialog.setContentText("Введите количество дней:");
 
-    Optional<String> customerResult = customerDialog.showAndWait();
-    if (customerResult.isPresent() && !customerResult.get().trim().isEmpty()) {
-      String customerName = customerResult.get().trim();
-
-      TextInputDialog daysDialog = new TextInputDialog("7");
-      daysDialog.setTitle("Бронирование");
-      daysDialog.setHeaderText("Введите количество дней для бронирования:");
-      daysDialog.setContentText("Дней:");
-
-      Optional<String> daysResult = daysDialog.showAndWait();
-      if (daysResult.isPresent()) {
-        try {
-          int days = Integer.parseInt(daysResult.get().trim());
-          if (days <= 0) {
-            showWarning("Количество дней должно быть положительным числом.");
-            return;
-          }
-
-          LocalDate dueDate = LocalDate.now().plusDays(days);
-          boolean success = publicationService.reservePublication(publication.getId(), customerName, dueDate);
-
-          if (success) {
-            refreshTable();
-            showInfo(String.format("Публикация '%s' успешно забронирована на имя %s до %s.",
-                publication.getTitle(), customerName, dueDate));
-          } else {
-            showError("Не удалось забронировать публикацию.");
-          }
-        } catch (NumberFormatException e) {
-          showWarning("Пожалуйста, введите корректное число дней.");
+    Optional<String> daysResult = daysDialog.showAndWait();
+    if (daysResult.isPresent()) {
+      try {
+        int days = Integer.parseInt(daysResult.get().trim());
+        if (days <= 0) {
+          showWarning("Количество дней должно быть положительным числом.");
+          return;
         }
+
+        LocalDate dueDate = LocalDate.now().plusDays(days);
+        boolean success = publicationService.reservePublication(
+            publication.getId(),
+            currentUser.getLogin(),
+            dueDate);
+
+        if (success) {
+          refreshTable();
+          showInfo(String.format(
+              "Публикация «%s» успешно забронирована на %s до %s.",
+              publication.getTitle(),
+              currentUser.getLogin(),
+              dueDate));
+        } else {
+          showError("Не удалось забронировать публикацию.");
+        }
+      } catch (NumberFormatException e) {
+        showWarning("Пожалуйста, введите корректное число дней.");
       }
     }
   }
 
   private void handleReturn(Long publicationId) {
+    if (!currentUser.canReservePublication())
+      return;
+    // Publication selected = publicationTable.getSelectionModel().getSelectedItem();
+    // if (selected == null) {
+    // showWarning("Сначала выберите публикацию для возврата.");
+    // return;
+    // }
+    // if (!selected.isReserved()) {
+    // showWarning("Эта публикация не забронирована.");
+    // return;
+    // }
+
+    // String reserver = selected.getReservedBy(selected.getId()); // логин того,
+    // кто бронировал
+    // boolean isLibrarian = currentUser.canAddPublication();
+    // // (по нашим ролям именно библиотекарь имеет canAddPublication==true)
+
+    // if (!isLibrarian && !currentUser.getLogin().equals(reserver)) {
+    // showWarning("Вы не можете вернуть чужую бронь.");
+    // return;
+    // }
+
+    // // подтверждение
+    // Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+    // String.format("Вы уверены, что хотите вернуть '%s'?", selected.getTitle()),
+    // ButtonType.YES, ButtonType.NO);
+    // confirm.setHeaderText(null);
+    // Optional<ButtonType> answer = confirm.showAndWait();
+    // if (answer.orElse(ButtonType.NO) != ButtonType.YES) {
+    // return;
+    // }
+
+    // // собственно возврат через сервис
+    // boolean ok = publicationService.returnPublication(selected.getId());
+    // if (ok) {
+    // showInfo("Публикация успешно возвращена.");
+    // refreshTable();
+    // } else {
+    // showError("Ошибка при возврате публикации.");
+    // }
     boolean success = publicationService.cancelReservation(publicationId);
     if (success) {
       refreshTable();
@@ -340,6 +460,8 @@ public class MainController {
   }
 
   private void handleDelete() {
+    if (!currentUser.canReservePublication())
+      return;
     Publication publication = publicationTable.getSelectionModel().getSelectedItem();
     if (publication == null) {
       showWarning("Сначала выберите публикацию для удаления.");
@@ -356,6 +478,14 @@ public class MainController {
       publicationService.deletePublication(publication.getId(), publication.getType());
       refreshTable();
     }
+  }
+
+  private void showAlert(String message) {
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    alert.setTitle("Авторизация");
+    alert.setHeaderText(null);
+    alert.setContentText(message);
+    alert.showAndWait();
   }
 
   private void refreshTable() {
