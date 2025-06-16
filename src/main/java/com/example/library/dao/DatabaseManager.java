@@ -11,9 +11,7 @@ public class DatabaseManager {
     private static final String PASSWORD = "";
     static {
         try {
-            // Инициализация драйвера
             Class.forName("org.h2.Driver");
-            // Создание базы данных при первом запуске
             createDatabaseIfNotExists();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Не удалось загрузить драйвер H2", e);
@@ -27,7 +25,6 @@ public class DatabaseManager {
     private static void createDatabaseIfNotExists() {
         try (Connection conn = getConnection();
                 Statement stmt = conn.createStatement()) {
-            // Создаем базовую таблицу для публикаций
             stmt.execute("CREATE TABLE IF NOT EXISTS publications (" +
                     "id BIGINT PRIMARY KEY, " +
                     "title VARCHAR(255) NOT NULL, " +

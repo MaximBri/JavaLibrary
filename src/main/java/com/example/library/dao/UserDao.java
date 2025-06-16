@@ -12,7 +12,6 @@ public class UserDao {
   private static final String PASS = "";
 
   public UserDao() {
-    // Инициализация таблицы
     try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
       stmt.execute("CREATE TABLE IF NOT EXISTS users (" +
           "id IDENTITY PRIMARY KEY, " +

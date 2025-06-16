@@ -21,15 +21,20 @@ public class ReservationService {
   }
 
   public List<Reservation> getReservationsForBook(Long bookId) {
-    return reservationDao.findByBookId(bookId);
+    return reservationDao.findByPublicationId(bookId);
   }
 
   public void addReservation(Reservation reservation) {
     reservationDao.add(reservation);
   }
 
-  public void cancelReservation(Long id) throws SQLException {
-    reservationDao.delete(id);
+  public boolean cancelReservation(Long id) {
+    try {
+      reservationDao.delete(id);
+      return true;
+    } catch (SQLException e) {
+      return false;
+    }
   }
 
   public void cancelExpiredReservations() {

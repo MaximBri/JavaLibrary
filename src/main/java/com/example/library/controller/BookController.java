@@ -62,7 +62,7 @@ public class BookController implements PublicationController {
       showError("Пожалуйста, введите корректное число страниц.");
     } catch (Exception e) {
       showError("Ошибка при добавлении книги: " + e.getMessage());
-      e.printStackTrace(); // Добавьте логирование для отладки
+      e.printStackTrace();
     }
   }
 

@@ -9,6 +9,13 @@ public class Reservation {
   private String customerName;
   private LocalDate dueDate;
 
+  public Reservation(Long id, Long bookId, String customerName, LocalDate dueDate) {
+    this.id = id;
+    this.bookId = bookId;
+    this.customerName = customerName;
+    this.dueDate = dueDate;
+  }
+
   public Reservation() {
   }
 

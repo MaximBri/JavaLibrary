@@ -3,9 +3,6 @@ package com.example.library.model;
 import java.time.LocalDate;
 import java.util.Objects;
 
-/**
- * Абстрактный базовый класс для всех типов публикаций в библиотеке
- */
 public abstract class Publication {
   private Long id;
   private String title;
@@ -13,10 +10,8 @@ public abstract class Publication {
   private LocalDate publishDate;
   private String publisher;
 
-  // Абстрактный метод, который должны реализовать все наследники
   public abstract String getType();
 
-  // Абстрактный метод для получения специфичной информации о публикации
   public abstract String getDescription();
 
   public Publication() {

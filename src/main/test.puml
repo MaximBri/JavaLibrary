@@ -1,0 +1,62 @@
+@startuml
+entity "books" as Books {
+  * id : IDENTITY
+  --
+  title        : VARCHAR(255)
+  author       : VARCHAR(255)
+  isbn         : VARCHAR(100) <<UNIQUE>>
+  reserved     : BOOLEAN
+}
+
+entity "magazines" as Magazines {
+  * id : IDENTITY
+  --
+  title        : VARCHAR(255)
+  issue_number : INT
+  issn         : VARCHAR(50)
+  reserved     : BOOLEAN
+}
+
+entity "newspapers" as Newspapers {
+  * id : IDENTITY
+  --
+  title        : VARCHAR(255)
+  editor_name  : VARCHAR(100)
+  frequency    : VARCHAR(50)
+  reserved     : BOOLEAN
+}
+
+entity "ebooks" as EBooks {
+  * id : IDENTITY
+  --
+  title        : VARCHAR(255)
+  author       : VARCHAR(255)
+  format       : VARCHAR(50)
+  file_size_mb : DOUBLE
+  reserved     : BOOLEAN
+}
+
+entity "users" as Users {
+  * id    : IDENTITY
+  --
+  login : VARCHAR(50) <<UNIQUE>>
+  name  : VARCHAR(100)
+  role  : VARCHAR(20)
+}
+
+entity "reservations" as Reservations {
+  * id             : IDENTITY
+  --
+  publication_id : BIGINT
+  user_login     : VARCHAR(50)
+  due_date       : DATE
+}
+
+Reservations }o--|| Books       : publication_id
+Reservations }o--|| Magazines   : publication_id
+Reservations }o--|| Newspapers  : publication_id
+Reservations }o--|| EBooks      : publication_id
+
+Reservations }o--|| Users       : user_login
+
+@enduml

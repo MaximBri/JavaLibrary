@@ -1,0 +1,3 @@
+2025-06-16 00:40:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "RESERVATIONS" not found (this database is empty); SQL statement:
+SELECT * FROM reservations WHERE book_id=? [42104-214]

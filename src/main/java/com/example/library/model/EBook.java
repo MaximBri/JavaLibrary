@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 public class EBook extends Book {
-  private String format; // PDF, EPUB, etc.
+  private String format;
   private double fileSizeMB;
   private String downloadUrl;
   private boolean isDrmProtected;

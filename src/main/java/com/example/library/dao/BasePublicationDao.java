@@ -152,7 +152,6 @@ public abstract class BasePublicationDao<T extends Publication> extends BaseDao<
 
   protected abstract T findTypeSpecificById(Long id);
 
-  // Метод для преобразования строки даты в LocalDate
   protected LocalDate parseLocalDate(String date) {
     return date != null && !date.isEmpty() ? LocalDate.parse(date) : null;
   }

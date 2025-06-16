@@ -63,7 +63,7 @@ public class BookService implements IBookService {
 
   @Override
   public void deleteBook(Long bookId) {
-    resDao.findByBookId(bookId).forEach(r -> {
+    resDao.findByPublicationId(bookId).forEach(r -> {
       try {
         resDao.delete(r.getId());
       } catch (SQLException e) {

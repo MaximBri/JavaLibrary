@@ -29,7 +29,6 @@ public abstract class User {
     return role;
   }
 
-  // Права доступа
   public abstract boolean canAddPublication();
 
   public abstract boolean canDeletePublication();

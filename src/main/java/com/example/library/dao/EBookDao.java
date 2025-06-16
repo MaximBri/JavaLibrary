@@ -8,7 +8,6 @@ public class EBookDao extends BasePublicationDao<EBook> {
 
   @Override
   protected void createTypeSpecificTable() {
-    // Сначала создаем таблицу для книг, если ее еще нет
     new BookDao().createTypeSpecificTable();
 
     String sql = "CREATE TABLE IF NOT EXISTS ebooks (" +
@@ -30,10 +29,8 @@ public class EBookDao extends BasePublicationDao<EBook> {
   @Override
   public void add(EBook ebook) {
     try {
-      // Вставляем базовую информацию о публикации
       insertBasePublication(ebook, "EBOOK");
 
-      // Вставляем информацию о книге
       String bookSql = "INSERT INTO books (id, author, isbn, page_count, genre) VALUES (?, ?, ?, ?, ?)";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(bookSql)) {
@@ -45,7 +42,6 @@ public class EBookDao extends BasePublicationDao<EBook> {
         ps.executeUpdate();
       }
 
-      // Вставляем информацию, специфичную для электронной книги
       String ebookSql = "INSERT INTO ebooks (id, format, file_size_mb, download_url, is_drm_protected) VALUES (?, ?, ?, ?, ?)";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(ebookSql)) {
@@ -64,10 +60,8 @@ public class EBookDao extends BasePublicationDao<EBook> {
   @Override
   public void update(EBook ebook) {
     try {
-      // Обновляем базовую информацию о публикации
       updateBasePublication(ebook);
 
-      // Обновляем информацию о книге
       String bookSql = "UPDATE books SET author=?, isbn=?, page_count=?, genre=? WHERE id=?";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(bookSql)) {
@@ -79,7 +73,6 @@ public class EBookDao extends BasePublicationDao<EBook> {
         ps.executeUpdate();
       }
 
-      // Обновляем информацию, специфичную для электронной книги
       String ebookSql = "UPDATE ebooks SET format=?, file_size_mb=?, download_url=?, is_drm_protected=? WHERE id=?";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(ebookSql)) {
@@ -141,7 +134,6 @@ public class EBookDao extends BasePublicationDao<EBook> {
 
   @Override
   public void delete(Long id) throws SQLException {
-    // При удалении из publications, каскадно удаляются записи из books и ebooks
     super.delete(id);
   }
 }

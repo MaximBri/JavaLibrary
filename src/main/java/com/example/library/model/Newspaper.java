@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class Newspaper extends Publication {
   private String editorName;
-  private String frequency; // daily, weekly, etc.
+  private String frequency;
   private boolean isNational;
   private String language;
 

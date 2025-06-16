@@ -10,10 +10,9 @@ public class ReservationDao extends BaseDao<Reservation> {
   public void createTable() {
     String sql = "CREATE TABLE IF NOT EXISTS reservations (" +
         "id IDENTITY PRIMARY KEY, " +
-        "book_id BIGINT, " +
-        "customer_name VARCHAR(255), " +
-        "due_date DATE, " +
-        "FOREIGN KEY (book_id) REFERENCES books(id)" +
+        "publication_id BIGINT NOT NULL, " + 
+        "customer_name VARCHAR(255) NOT NULL, " +
+        "due_date DATE NOT NULL" + 
         ")";
     try (Connection conn = conn();
         Statement stmt = conn.createStatement()) {
@@ -25,48 +24,45 @@ public class ReservationDao extends BaseDao<Reservation> {
 
   @Override
   public void add(Reservation r) {
-    String sql = "INSERT INTO reservations (book_id, customer_name, due_date) VALUES (?, ?, ?)";
+    String sql = "INSERT INTO reservations(publication_id, customer_name, due_date) VALUES(?, ?, ?)";
     try (Connection conn = conn();
-        PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        PreparedStatement ps = conn.prepareStatement(sql)) {
       ps.setLong(1, r.getBookId());
       ps.setString(2, r.getCustomerName());
       ps.setDate(3, Date.valueOf(r.getDueDate()));
       ps.executeUpdate();
-      ResultSet rs = ps.getGeneratedKeys();
-      if (rs.next())
-        r.setId(rs.getLong(1));
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Ошибка при добавлении резервации", e);
     }
   }
 
   @Override
   public List<Reservation> findAll() {
-    return findByBookId(null);
+    return findByPublicationId(null);
   }
 
-  public List<Reservation> findByBookId(Long bookId) {
-    List<Reservation> list = new ArrayList<>();
-    String sql = bookId == null
-        ? "SELECT * FROM reservations"
-        : "SELECT * FROM reservations WHERE book_id=?";
+  public List<Reservation> findByPublicationId(Long publicationId) {
+    String sql = publicationId == null
+        ? "SELECT id, publication_id, customer_name, due_date FROM reservations"
+        : "SELECT id, publication_id, customer_name, due_date FROM reservations WHERE publication_id = ?";
+    List<Reservation> results = new ArrayList<>();
     try (Connection conn = conn();
         PreparedStatement ps = conn.prepareStatement(sql)) {
-      if (bookId != null)
-        ps.setLong(1, bookId);
+      if (publicationId != null)
+        ps.setLong(1, publicationId);
       ResultSet rs = ps.executeQuery();
       while (rs.next()) {
-        Reservation r = new Reservation();
-        r.setId(rs.getLong("id"));
-        r.setBookId(rs.getLong("book_id"));
-        r.setCustomerName(rs.getString("customer_name"));
-        r.setDueDate(rs.getDate("due_date").toLocalDate());
-        list.add(r);
+        Reservation r = new Reservation(
+            rs.getLong("id"),
+            rs.getLong("publication_id"),
+            rs.getString("customer_name"),
+            rs.getDate("due_date").toLocalDate());
+        results.add(r);
       }
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Ошибка при получении резерваций", e);
     }
-    return list;
+    return results;
   }
 
   @Override

@@ -2,7 +2,6 @@ package com.example.library.dao;
 
 import com.example.library.model.Magazine;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MagazineDao extends BasePublicationDao<Magazine> {
@@ -28,10 +27,8 @@ public class MagazineDao extends BasePublicationDao<Magazine> {
   @Override
   public void add(Magazine magazine) {
     try {
-      // Вставляем базовую информацию о публикации
       insertBasePublication(magazine, "MAGAZINE");
 
-      // Вставляем информацию, специфичную для журнала
       String sql = "INSERT INTO magazines (id, issn, issue_number, category, is_monthly) VALUES (?, ?, ?, ?, ?)";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -51,10 +48,8 @@ public class MagazineDao extends BasePublicationDao<Magazine> {
   @Override
   public void update(Magazine magazine) {
     try {
-      // Обновляем базовую информацию о публикации
       updateBasePublication(magazine);
 
-      // Обновляем информацию, специфичную для журнала
       String sql = "UPDATE magazines SET issn=?, issue_number=?, category=?, is_monthly=? WHERE id=?";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -112,7 +107,6 @@ public class MagazineDao extends BasePublicationDao<Magazine> {
 
   @Override
   public void delete(Long id) throws SQLException {
-    // При удалении из publications, каскадно удаляются записи из magazines
     super.delete(id);
   }
 }

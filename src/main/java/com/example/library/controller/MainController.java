@@ -76,10 +76,6 @@ public class MainController {
 
   private User currentUser;
   private AuthService authService;
-  private BookDao bookDao;
-  private MagazineDao magazineDao;
-  private NewspaperDao newspaperDao;
-  private EBookDao ebookDao;
 
   public MainController() {
     this.publicationService = new PublicationService();
@@ -88,11 +84,7 @@ public class MainController {
 
   @FXML
   public void initialize() {
-    bookDao = new BookDao();
     authService = new AuthService();
-    magazineDao = new MagazineDao();
-    newspaperDao = new NewspaperDao();
-    ebookDao = new EBookDao();
 
     applyPermissions();
     setupTypeFilter();
@@ -109,7 +101,6 @@ public class MainController {
   private void applyPermissions() {
     boolean loggedIn = currentUser != null;
 
-    // canAdd = могут ли добавлять публикации?
     boolean canAdd = loggedIn && currentUser.canAddPublication();
     addBookBtn.setVisible(canAdd);
     addBookBtn.setManaged(canAdd);
@@ -120,28 +111,13 @@ public class MainController {
     addEBookBtn.setVisible(canAdd);
     addEBookBtn.setManaged(canAdd);
 
-    // canDelete = могут ли удалять?
     boolean canDelete = loggedIn && currentUser.canDeletePublication();
     deleteBtn.setVisible(canDelete);
     deleteBtn.setManaged(canDelete);
 
-    // canReserve = могут ли бронировать?
     boolean canReserve = loggedIn && currentUser.canReservePublication();
     reserveBtn.setVisible(canReserve);
     reserveBtn.setManaged(canReserve);
-    // boolean canAdd = currentUser != null && currentUser.canAddPublication();
-    // addBookBtn.setDisable(!canAdd);
-    // addMagazineBtn.setDisable(!canAdd);
-    // addNewspaperBtn.setDisable(!canAdd);
-    // addEBookBtn.setDisable(!canAdd);
-
-    // boolean canDelete = currentUser != null &&
-    // currentUser.canDeletePublication();
-    // deleteBtn.setDisable(!canDelete);
-
-    // boolean canReserve = currentUser != null &&
-    // currentUser.canReservePublication();
-    // reserveBtn.setDisable(!canReserve);
   }
 
   public void setCurrentUser(User user) {
@@ -159,6 +135,7 @@ public class MainController {
     currentUser = authService.login(login, password);
     showAlert("Успешный вход: " + currentUser.getName() + ", роль: " + currentUser.getRole());
     applyPermissions();
+    publicationTable.refresh();
   }
 
   private void setupTypeFilter() {
@@ -273,18 +250,33 @@ public class MainController {
 
       {
         returnBtn.getStyleClass().add("toolbar-button");
-        returnBtn.setOnAction(e -> handleReturn(getTableRow().getItem().getId()));
+        returnBtn.setOnAction(e -> {
+          Publication pub = getTableRow().getItem();
+          if (pub != null) {
+            handleReturn(pub);
+          }
+        });
       }
 
       @Override
       protected void updateItem(Void item, boolean empty) {
         super.updateItem(item, empty);
+        setGraphic(null);
+        if (empty)
+          return;
 
-        if (empty) {
-          setGraphic(null);
-        } else {
-          Publication publication = getTableRow().getItem();
-          setGraphic(publication != null && publication.isReserved() ? returnBtn : null);
+        Publication pub = getTableRow().getItem();
+        if (pub == null)
+          return;
+
+        Optional<String> reservedByOpt = reservationService.getReservedBy(pub.getId());
+        boolean isReserved = reservedByOpt.isPresent();
+        boolean isLoggedIn = currentUser != null;
+        boolean isLibrarian = isLoggedIn && currentUser.canAddPublication();
+        boolean isOwner = isLoggedIn && reservedByOpt.map(currentUser.getLogin()::equals).orElse(false);
+
+        if (isReserved && (isLibrarian || isOwner)) {
+          setGraphic(returnBtn);
         }
       }
     });
@@ -320,6 +312,13 @@ public class MainController {
         break;
       default:
         publications = publicationService.getAllPublications();
+    }
+
+    for (Publication pub : publications) {
+      boolean hasActive = reservationService
+          .getReservationsForBook(pub.getId()).stream()
+          .anyMatch(r -> !r.getDueDate().isBefore(LocalDate.now()));
+      pub.setReserved(hasActive);
     }
 
     updatePublicationTable(publications);
@@ -371,7 +370,6 @@ public class MainController {
       return;
     }
 
-    // Запрашиваем у пользователя только число дней
     TextInputDialog daysDialog = new TextInputDialog("7");
     daysDialog.setTitle("Бронирование");
     daysDialog.setHeaderText(
@@ -409,51 +407,39 @@ public class MainController {
     }
   }
 
-  private void handleReturn(Long publicationId) {
-    if (!currentUser.canReservePublication())
+  private void handleReturn(Publication publication) {
+    Long pubId = publication.getId();
+
+    Optional<Reservation> activeRes = reservationService.getReservationsForBook(pubId).stream()
+        .filter(r -> !r.getDueDate().isBefore(LocalDate.now()))
+        .findFirst();
+
+    if (activeRes.isEmpty()) {
+      showWarning("Эта публикация не забронирована.");
       return;
-    // Publication selected = publicationTable.getSelectionModel().getSelectedItem();
-    // if (selected == null) {
-    // showWarning("Сначала выберите публикацию для возврата.");
-    // return;
-    // }
-    // if (!selected.isReserved()) {
-    // showWarning("Эта публикация не забронирована.");
-    // return;
-    // }
+    }
 
-    // String reserver = selected.getReservedBy(selected.getId()); // логин того,
-    // кто бронировал
-    // boolean isLibrarian = currentUser.canAddPublication();
-    // // (по нашим ролям именно библиотекарь имеет canAddPublication==true)
+    Reservation reservation = activeRes.get();
+    String reservedBy = reservation.getCustomerName();
 
-    // if (!isLibrarian && !currentUser.getLogin().equals(reserver)) {
-    // showWarning("Вы не можете вернуть чужую бронь.");
-    // return;
-    // }
+    boolean isLibrarian = currentUser.canAddPublication();
+    boolean isOwner = currentUser.getLogin().equals(reservedBy);
+    if (!isLibrarian && !isOwner) {
+      showWarning("Вы не можете вернуть чужую бронь.");
+      return;
+    }
 
-    // // подтверждение
-    // Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-    // String.format("Вы уверены, что хотите вернуть '%s'?", selected.getTitle()),
-    // ButtonType.YES, ButtonType.NO);
-    // confirm.setHeaderText(null);
-    // Optional<ButtonType> answer = confirm.showAndWait();
-    // if (answer.orElse(ButtonType.NO) != ButtonType.YES) {
-    // return;
-    // }
+    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+        String.format("Вернуть '%s', зарезервированную %s?", publication.getTitle(), reservedBy),
+        ButtonType.YES, ButtonType.NO);
+    if (confirm.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) {
+      return;
+    }
 
-    // // собственно возврат через сервис
-    // boolean ok = publicationService.returnPublication(selected.getId());
-    // if (ok) {
-    // showInfo("Публикация успешно возвращена.");
-    // refreshTable();
-    // } else {
-    // showError("Ошибка при возврате публикации.");
-    // }
-    boolean success = publicationService.cancelReservation(publicationId);
+    boolean success = reservationService.cancelReservation(reservation.getId());
     if (success) {
       refreshTable();
-      showInfo("Публикация успешно возвращена в библиотеку.");
+      showInfo("Публикация успешно возвращена.");
     } else {
       showError("Не удалось вернуть публикацию.");
     }
@@ -475,7 +461,7 @@ public class MainController {
 
     Optional<ButtonType> result = alert.showAndWait();
     if (result.isPresent() && result.get() == ButtonType.OK) {
-      publicationService.deletePublication(publication.getId(), publication.getType());
+      publicationService.deletePublication(publication);
       refreshTable();
     }
   }

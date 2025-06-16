@@ -27,10 +27,8 @@ public class NewspaperDao extends BasePublicationDao<Newspaper> {
   @Override
   public void add(Newspaper newspaper) {
     try {
-      // Вставляем базовую информацию о публикации
       insertBasePublication(newspaper, "NEWSPAPER");
 
-      // Вставляем информацию, специфичную для газеты
       String sql = "INSERT INTO newspapers (id, editor_name, frequency, is_national, language) VALUES (?, ?, ?, ?, ?)";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -49,10 +47,8 @@ public class NewspaperDao extends BasePublicationDao<Newspaper> {
   @Override
   public void update(Newspaper newspaper) {
     try {
-      // Обновляем базовую информацию о публикации
       updateBasePublication(newspaper);
 
-      // Обновляем информацию, специфичную для газеты
       String sql = "UPDATE newspapers SET editor_name=?, frequency=?, is_national=?, language=? WHERE id=?";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -108,7 +104,6 @@ public class NewspaperDao extends BasePublicationDao<Newspaper> {
 
   @Override
   public void delete(Long id) throws SQLException {
-    // При удалении из publications, каскадно удаляются записи из newspapers
     super.delete(id);
   }
 }

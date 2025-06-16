@@ -12,7 +12,7 @@ public class BookDao extends BasePublicationDao<Book> {
         "id BIGINT PRIMARY KEY, " +
         "author VARCHAR(255), " +
         "isbn VARCHAR(20), " +
-        "page_count INT, " + // Исправлено с pageCount на page_count
+        "page_count INT, " + 
         "genre VARCHAR(100), " +
         "FOREIGN KEY (id) REFERENCES publications(id) ON DELETE CASCADE" +
         ");";
@@ -27,10 +27,8 @@ public class BookDao extends BasePublicationDao<Book> {
   @Override
   public void add(Book book) {
     try {
-      // Вставляем базовую информацию о публикации
       insertBasePublication(book, "BOOK");
 
-      // Вставляем информацию, специфичную для книги
       String sql = "INSERT INTO books (id, author, isbn, page_count, genre) VALUES (?, ?, ?, ?, ?)";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -50,10 +48,8 @@ public class BookDao extends BasePublicationDao<Book> {
   @Override
   public void update(Book book) {
     try {
-      // Обновляем базовую информацию о публикации
       updateBasePublication(book);
 
-      // Обновляем информацию, специфичную для книги
       String sql = "UPDATE books SET author=?, isbn=?, page_count=?, genre=? WHERE id=?";
       try (Connection conn = DatabaseManager.getConnection();
           PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -114,7 +110,6 @@ public class BookDao extends BasePublicationDao<Book> {
 
   @Override
   public void delete(Long id) throws SQLException {
-    // При удалении из publications, каскадно удаляются записи из books
     super.delete(id);
   }
 }

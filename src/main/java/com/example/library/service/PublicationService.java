@@ -24,7 +24,6 @@ public class PublicationService {
     this.ebookDao = new EBookDao();
     this.reservationDao = new ReservationDao();
 
-    // Инициализация таблиц
     this.bookDao.createTable();
     this.magazineDao.createTable();
     this.newspaperDao.createTable();
@@ -32,7 +31,6 @@ public class PublicationService {
     this.reservationDao.createTable();
   }
 
-  // Метод для получения всех публикаций
   public List<Publication> getAllPublications() {
     List<Publication> publications = new ArrayList<>();
     publications.addAll(bookDao.findAll());
@@ -42,7 +40,6 @@ public class PublicationService {
     return publications;
   }
 
-  // Метод для поиска публикаций по названию
   public List<Publication> findPublicationsByTitle(String title) {
     List<Publication> publications = new ArrayList<>();
     publications.addAll(bookDao.findByTitle(title));
@@ -52,7 +49,6 @@ public class PublicationService {
     return publications;
   }
 
-  // Метод для поиска публикаций по издателю
   public List<Publication> findPublicationsByPublisher(String publisher) {
     List<Publication> publications = new ArrayList<>();
     publications.addAll(bookDao.findByPublisher(publisher));
@@ -62,7 +58,6 @@ public class PublicationService {
     return publications;
   }
 
-  // Методы для работы с книгами
   public void addBook(Book book) {
     bookDao.add(book);
   }
@@ -75,7 +70,6 @@ public class PublicationService {
     return bookDao.findAll();
   }
 
-  // Методы для работы с журналами
   public void addMagazine(Magazine magazine) {
     magazineDao.add(magazine);
   }
@@ -88,7 +82,6 @@ public class PublicationService {
     return magazineDao.findAll();
   }
 
-  // Методы для работы с газетами
   public void addNewspaper(Newspaper newspaper) {
     newspaperDao.add(newspaper);
   }
@@ -101,7 +94,6 @@ public class PublicationService {
     return newspaperDao.findAll();
   }
 
-  // Методы для работы с электронными книгами
   public void addEBook(EBook ebook) {
     ebookDao.add(ebook);
   }
@@ -114,94 +106,65 @@ public class PublicationService {
     return ebookDao.findAll();
   }
 
-  public void deletePublication(Publication publication) {
-    if (publication == null) {
-      throw new IllegalArgumentException("Публикация не может быть null");
-    }
-
+  public boolean deletePublication(Publication pub) {
     try {
-      if (publication instanceof Book) {
-        bookDao.delete(publication.getId());
-      } else if (publication instanceof Magazine) {
-        magazineDao.delete(publication.getId());
-      } else if (publication instanceof Newspaper) {
-        newspaperDao.delete(publication.getId());
-      } else if (publication instanceof EBook) {
-        ebookDao.delete(publication.getId());
-      } else {
-        throw new IllegalArgumentException("Неизвестный тип публикации: " +
-            publication.getClass().getSimpleName());
-      }
-    } catch (SQLException e) {
-      throw new RuntimeException("Ошибка при удалении публикации: " + e.getMessage(), e);
-    }
-  }
-
-  public void deletePublication(Long id, String type) {
-    Dao<?> dao = getDaoByType(type);
-    try {
-      dao.delete(id);
-    } catch (SQLException e) {
-      throw new RuntimeException("Ошибка при удалении публикации: " + e.getMessage(), e);
-    }
-  }
-
-  private Dao<?> getDaoByType(String type) {
-    switch (type) {
-      case "Book":
-      case "Книга":
-        return bookDao;
-      case "Magazine":
-      case "Журнал":
-        return magazineDao;
-      case "Newspaper":
-      case "Газета":
-        return newspaperDao;
-      case "EBook":
-      case "Эл. книга":
-        return ebookDao;
-      default:
-        throw new IllegalArgumentException("Неизвестный тип публикации: " + type);
-    }
-  }
-
-  // Метод для бронирования публикации
-  public boolean reservePublication(Long publicationId, String customerName, LocalDate dueDate) {
-    List<Publication> allPublications = getAllPublications();
-    Optional<Publication> optionalPublication = allPublications.stream()
-        .filter(p -> p.getId().equals(publicationId) && !p.isReserved())
-        .findFirst();
-
-    if (optionalPublication.isPresent()) {
-      Publication publication = optionalPublication.get();
-      publication.setReserved(true);
-
-      // Обновляем публикацию в соответствующей таблице
-      if (publication instanceof Book && !(publication instanceof EBook)) {
-        bookDao.update((Book) publication);
-      } else if (publication instanceof Magazine) {
-        magazineDao.update((Magazine) publication);
-      } else if (publication instanceof Newspaper) {
-        newspaperDao.update((Newspaper) publication);
-      } else if (publication instanceof EBook) {
-        ebookDao.update((EBook) publication);
-      }
-
-      // Создаем запись о бронировании
-      reservationDao.add(new Reservation(publicationId, customerName, dueDate));
+      getDaoByType(pub).delete(pub.getId());
       return true;
+    } catch (Exception e) {
+      return false;
     }
-    return false;
   }
 
-  // Метод для отмены бронирования
+  private PublicationDao getDaoByType(Publication pub) {
+    if (pub instanceof EBook)
+      return ebookDao;
+    if (pub instanceof Newspaper)
+      return newspaperDao;
+    if (pub instanceof Magazine)
+      return magazineDao;
+    if (pub instanceof Book)
+      return bookDao;
+    throw new IllegalArgumentException("Неизвестный тип публикации: "
+        + pub.getClass().getSimpleName());
+  }
+
+  public boolean reservePublication(Long publicationId, String userLogin, LocalDate dueDate) {
+    List<Reservation> existing = reservationDao.findByPublicationId(publicationId);
+    boolean already = existing.stream().anyMatch(r -> !r.getDueDate().isBefore(LocalDate.now()));
+    if (already) {
+      return false;
+    }
+    try {
+      reservationDao.add(new Reservation(null, publicationId, userLogin, dueDate));
+    } catch (Exception e) {
+      return false;
+    }
+    Optional<Publication> opt = getAllPublications().stream()
+        .filter(p -> p.getId().equals(publicationId))
+        .findFirst();
+    if (opt.isPresent()) {
+      Publication p = opt.get();
+      p.setReserved(true);
+      getDaoByType(p).update(p);
+    }
+    return true;
+  }
+
+  public boolean reservePublication(Publication pub, String userLogin, LocalDate dueDate) {
+    try {
+      reservationDao.add(new Reservation(null, pub.getId(), userLogin, dueDate));
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   public boolean cancelReservation(Long publicationId) {
-    List<Reservation> reservations = reservationDao.findByBookId(publicationId);
+    List<Reservation> reservations = reservationDao.findByPublicationId(publicationId);
     if (reservations.isEmpty()) {
       return false;
     }
 
-    // Находим публикацию и снимаем флаг бронирования
     List<Publication> allPublications = getAllPublications();
     Optional<Publication> optionalPublication = allPublications.stream()
         .filter(p -> p.getId().equals(publicationId))
@@ -211,7 +174,6 @@ public class PublicationService {
       Publication publication = optionalPublication.get();
       publication.setReserved(false);
 
-      // Обновляем публикацию в соответствующей таблице
       if (publication instanceof Book && !(publication instanceof EBook)) {
         bookDao.update((Book) publication);
       } else if (publication instanceof Magazine) {
@@ -222,7 +184,6 @@ public class PublicationService {
         ebookDao.update((EBook) publication);
       }
 
-      // Удаляем записи о бронировании
       for (Reservation reservation : reservations) {
         try {
           reservationDao.delete(reservation.getId());
@@ -235,7 +196,6 @@ public class PublicationService {
     return false;
   }
 
-  // Метод для отмены просроченных бронирований
   public void cancelExpiredReservations() {
     List<Reservation> allReservations = reservationDao.findAll();
     List<Reservation> expiredReservations = allReservations.stream()
